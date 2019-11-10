@@ -1,4 +1,3 @@
-#Import Dependencies
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -14,7 +13,6 @@ from flask import Flask, jsonify
 import datetime
 from dateutil.parser import parse
 
-# Setup Database
 engine = create_engine("sqlite:///hawaii.sqlite")
 conn = engine.connect()
 
@@ -33,17 +31,16 @@ Station = Base.classes.station
 # Create our session (link) from Python to the DB
 session = Session(engine)
 
-#Setup Flask
 app = Flask(__name__)
 
-# Python Pandas/SQL Alchemy queries for Flask routes to work
 measurement_df2 = pd.read_sql("select date, prcp from Measurement where date between '2016-08-23' and '2017-08-23'", conn)
 station_df = pd.read_sql("select * from Station", conn)
 station_list = station_df['station'].to_json(orient='records')
 station281_df = pd.read_sql("select date, tobs from Measurement where station = 'USC00519281' and date between '2016-08-23' and '2017-08-23'", conn)
 station281 = station281_df.to_json(orient='records')
+measurement_df = pd.read_sql("select * from Measurement", conn)
+last_date = measurement_df.iloc[-1]['date']
 
-#Flask routes
 @app.route('/')
 def welcome():
     return (
@@ -84,7 +81,8 @@ def temp_monthly():
 def stats(start_date=None, end_date=None):
     """Return TMIN, TAVG, TMAX."""
     if not end_date:
-        end_date = start_date
+        end_date = last_date
+
         
     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).filter(Measurement.date>=start_date).filter(Measurement.date <= end_date).all()
     
